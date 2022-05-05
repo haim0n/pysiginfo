@@ -36,10 +36,13 @@ def gen_strace_lines(pids: Iterable, sigs: Set):
         stderr=subprocess.STDOUT,
         bufsize=0,
     )
+    monitored_pid = None
     for l in strace_proc.stdout:
         enc_l = l.decode()
+        if 'strace: next_event: dequeued pid' in enc_l:
+            monitored_pid = enc_l.rsplit(maxsplit=1)[1]
         if 'si_pid=' in enc_l:
-            yield enc_l
+            yield f'monitored pid: {monitored_pid} event: {enc_l}'
         elif 'strace: Could not attach to process' in enc_l:
             strace_err(enc_l)
 
@@ -136,8 +139,8 @@ def main():
 
     for line in gen_strace_lines(args.pids, sigs=set(args.sigs)):
         sender_pid = get_sender_pid(line)
-        pid_info = get_pid_info(sender_pid)
-        out_line = f'{line.strip()}, {pid_info}'
+        sender_pid_info = get_pid_info(sender_pid)
+        out_line = f'{line.strip()}, sig sender: {sender_pid_info}'
         logging.info(out_line)
 
 
