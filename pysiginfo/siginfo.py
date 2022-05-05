@@ -121,7 +121,7 @@ def config_logging():
 
 
 def validate_permissions():
-    if not os.geteuid():
+    if os.geteuid():
         exit_error('error: insufficient priviligies, run as sudo')
 
 
@@ -131,11 +131,11 @@ def validate_strace():
 
 
 def main():
+    args = get_args()
+    validate_args(args)
     validate_permissions()
     validate_strace()
     config_logging()
-    args = get_args()
-    validate_args(args)
 
     for line in gen_strace_lines(args.pids, sigs=set(args.sigs)):
         sender_pid = get_sender_pid(line)
